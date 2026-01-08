@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
-const { getRedisClient } = require('../config/redis');
+const RedisService = require('../services/redis.service');
 
 // Protect routes
 const protect = async (req, res, next) => {
@@ -22,8 +22,7 @@ const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
 
     // Check if token exists in Redis (for logout functionality)
-    const redisClient = getRedisClient();
-    const storedToken = await redisClient.get(`token:${decoded.id}`);
+    const storedToken = await RedisService.get(`token:${decoded.id}`);
 
     if (!storedToken || storedToken !== token) {
       return res.status(401).json({
