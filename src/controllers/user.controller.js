@@ -1,11 +1,18 @@
-const User = require('../models/user.model');
+const UserService = require('../services/user.service');
 
 // @desc    Get current user
 // @route   GET /api/users/me
 // @access  Private
 const getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await UserService.getUserById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
 
     res.status(200).json({
       success: true,
@@ -28,7 +35,7 @@ const getMe = async (req, res, next) => {
 // @access  Private
 const getUsers = async (req, res, next) => {
   try {
-    const users = await User.find().select('-password');
+    const users = await UserService.getAllUsers();
 
     res.status(200).json({
       success: true,
@@ -47,7 +54,7 @@ const getUsers = async (req, res, next) => {
 // @access  Private
 const getUser = async (req, res, next) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
+    const user = await UserService.getUserById(req.params.id);
 
     if (!user) {
       return res.status(404).json({
@@ -74,14 +81,7 @@ const updateUser = async (req, res, next) => {
   try {
     const { name, email } = req.body;
 
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { name, email },
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).select('-password');
+    const user = await UserService.updateUser(req.params.id, { name, email });
 
     if (!user) {
       return res.status(404).json({
@@ -106,7 +106,7 @@ const updateUser = async (req, res, next) => {
 // @access  Private
 const deleteUser = async (req, res, next) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const user = await UserService.deleteUser(req.params.id);
 
     if (!user) {
       return res.status(404).json({
