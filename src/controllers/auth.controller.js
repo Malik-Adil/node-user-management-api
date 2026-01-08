@@ -1,6 +1,6 @@
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
-const { getRedisClient } = require('../config/redis');
+const RedisService = require('../services/redis.service');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -35,8 +35,8 @@ const register = async (req, res, next) => {
     // Generate token
     const token = generateToken(user._id.toString());
 
-    const redisClient = getRedisClient();
-    await redisClient.setEx(`token:${user._id}`, 30 * 24 * 60 * 60, token); // 30 days
+    // Store token in Redis with 30 days expiration
+    await RedisService.set(`token:${user._id}`, token, 30 * 24 * 60 * 60);
 
     res.status(201).json({
       success: true,
@@ -83,8 +83,7 @@ const login = async (req, res, next) => {
     const token = generateToken(user._id.toString());
 
     // Store token in Redis (optional - for token blacklisting)
-    const redisClient = getRedisClient();
-    await redisClient.setEx(`token:${user._id}`, 30 * 24 * 60 * 60, token); // 30 days
+    await RedisService.set(`token:${user._id}`, token, 30 * 24 * 60 * 60); // 30 days
 
     res.status(200).json({
       success: true,
@@ -107,8 +106,7 @@ const login = async (req, res, next) => {
 // @access  Private
 const logout = async (req, res, next) => {
   try {
-    const redisClient = getRedisClient();
-    await redisClient.del(`token:${req.user.id}`);
+    await RedisService.delete(`token:${req.user.id}`);
 
     res.status(200).json({
       success: true,
