@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/user.model');
+const UserService = require('../services/user.service');
 const RedisService = require('../services/redis.service');
 
 // Protect routes
@@ -32,7 +32,7 @@ const protect = async (req, res, next) => {
     }
 
     // Get user from the token
-    req.user = await User.findById(decoded.id);
+    req.user = await UserService.getUserById(decoded.id);
 
     if (!req.user) {
       return res.status(401).json({
@@ -40,6 +40,9 @@ const protect = async (req, res, next) => {
         message: 'User not found',
       });
     }
+
+    // Normalize user ID for consistency (add id as alias for _id)
+    req.user.id = req.user._id.toString();
 
     next();
   } catch (error) {
